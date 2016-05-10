@@ -1,0 +1,40 @@
+<?xml version="1.0"?>
+<package>
+  <name>kinect2_tracker</name>
+  <version>0.0.1</version>
+  <description>The kinect2_tracker package</description>
+
+  <maintainer email="mep12sr@sheffield.ac.uk">Stephen</maintainer>
+  <license>BSD</license>
+  
+  <author email="mep12sr@sheffield.ac.uk">Stephen Reddish</author>
+
+  <buildtool_depend>catkin</buildtool_depend>
+<build_depend>cmake_modules</build_depend>
+  <build_depend>cv_bridge</build_depend>
+  <build_depend>geometry_msgs</build_depend>
+  <build_depend>image_transport</build_depend>
+  <build_depend>kdl_conversions</build_depend>
+  <build_depend>pcl_conversions</build_depend>
+  <build_depend>pcl_ros</build_depend>
+  <build_depend>roscpp</build_depend>
+  <build_depend>roslib</build_depend>
+  <build_depend>tf</build_depend>
+  <build_depend>tf_conversions</build_depend>
+  <build_depend>glut</build_depend>
+  <build_depend>libxmu-dev</build_depend>
+  <build_depend>libxi-dev</build_depend>
+
+<run_depend>cmake_modules</run_depend>
+  <run_depend>cv_bridge</run_depend>
+  <run_depend>geometry_msgs</run_depend>
+  <run_depend>image_transport</run_depend>
+  <run_depend>kdl_conversions</run_depend>
+  <run_depend>pcl_conversions</run_depend>
+  <run_depend>pcl_ros</run_depend>
+  <run_depend>roscpp</run_depend>
+  <run_depend>roslib</run_depend>
+  <run_depend>tf</run_depend>
+  <run_depend>tf_conversions</run_depend>
+
+</package>
