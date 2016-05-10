@@ -214,6 +214,56 @@ public:
     return;
   }
 
+  //Publish the calibration tf_frame as the cross product of the shoulder vectors
+ -// This function publishes the calibration_space opposite the shoulders of the user
+ -  void publishCalibrationOriginTF(nite::SkeletonJoint skelTorso, nite::SkeletonJoint skelRshoulder, nite::SkeletonJoint skelLshoulder, int uid) 
+ -  {
+ -    if (skelTorso.getPositionConfidence() > 0.0)
+ -    {
+ -      tf::Transform calibrationOriginTransform;
+ -      tf::Transform torsoTransform;
+ -
+ -            tf::Vector3 torsoVec3 = tf::Vector3(skelTorso.getPosition().x / 1000.0, skelTorso.getPosition().y / 1000.0, skelTorso.getPosition().z / 1000.0);
+ -            torsoTransform.setOrigin(torsoVec3);
+ -            torsoTransform.setRotation(tf::Quaternion(0,0,0,1));
+ -
+ -            tf::Vector3 RshoulderVec3 = tf::Vector3(skelRshoulder.getPosition().x / 1000.0, skelRshoulder.getPosition().y / 1000.0, skelRshoulder.getPosition().z / 1000.0);                 //create a vector for the right shoulder
+ -            RshoulderVec3 = (RshoulderVec3 - torsoVec3); //vector is the difference of the two
+ -
+ -            tf::Vector3 LshoulderVec3 = tf::Vector3(skelLshoulder.getPosition().x / 1000.0, skelLshoulder.getPosition().y / 1000.0, skelLshoulder.getPosition().z / 1000.0);                 //create a vector for the left shoulder
+            LshoulderVec3 = (LshoulderVec3 - torsoVec3);
+            tf::Vector3 calibrationOriginVec3 = RshoulderVec3.cross(LshoulderVec3);
+
+		//give the calibration origin some length
+//	   calibrationOriginVec3 = calibrationOriginVec3 * 20;
+           calibrationOriginTransform.setOrigin(calibrationOriginVec3);// set the x,y,z coordinates of the calibration transform frame
+
+              Eigen::Vector3d eigencalibrationOriginVec3;
+              tf::vectorTFToEigen(calibrationOriginVec3, eigencalibrationOriginVec3); //conversion of tf:Vec3 to eigen
+              Eigen::Vector3d eigenTorsoVec3;
+              tf::vectorTFToEigen(torsoVec3, eigenTorsoVec3);               //conversion of torse tf:vec3 to eigen
+              Eigen::Quaterniond eigen_calibrationOrigenQuaternion;
+              eigen_calibrationOrigenQuaternion.setFromTwoVectors(eigencalibrationOriginVec3, eigenTorsoVec3);
+              tf::Quaternion tf_calibrationOriginQuaternion;
+              tf::quaternionEigenToTF(eigen_calibrationOrigenQuaternion, tf_calibrationOriginQuaternion);
+
+            calibrationOriginTransform.setRotation(tf_calibrationOriginQuaternion);		
+      
+        std::stringstream calibration_frame_id_stream; //stringstream of frame id values
+        std::string calibration_frame_id; // string of the stringstream
+        calibration_frame_id_stream << "/" << tf_prefix_ << "/user_" << uid << "/calibrationOrigin";
+        calibration_frame_id = calibration_frame_id_stream.str();
+
+	std::stringstream r_frame_id_stream; //stringstream of frame id values
+        std::string r_frame_id; // string of the stringstream
+        r_frame_id_stream << "/" << tf_prefix_ << "/user_" << uid << "/torso";
+        r_frame_id = r_frame_id_stream.str();
+            
+        tfBroadcast_.sendTransform(tf::StampedTransform(calibrationOriginTransform, ros::Time::now(), r_frame_id, calibration_frame_id));
+    }
+    return;
+  }
+
   /**
    * Get the skeleton's joints and the users IDs and make them all relative to the Torso joint
   */
@@ -274,6 +324,9 @@ public:
         publishJointTF("right_elbow", named_joints["right_elbow"], "right_shoulder", named_joints["right_shoulder"], user.getId());
         publishJointTF("left_hand", named_joints["left_hand"], "left_elbow", named_joints["left_elbow"], user.getId());
         publishJointTF("right_hand", named_joints["right_hand"], "right_elbow", named_joints["right_elbow"], user.getId());
+
+//publishes the funny normal vector from the users chest
+        publishCalibrationOriginTF(named_joints["torso"], named_joints["left_shoulder"], named_joints["right_shoulder"], user.getId());
 
         // Add the user's ID
         ids.users.push_back(int(user.getId()));
