@@ -17,8 +17,14 @@
 #include <ros/ros.h>
 #include <tf/transform_broadcaster.h>
 #include <tf/transform_listener.h>
+#include <image_transport/image_transport.h>
+#include <cv_bridge/cv_bridge.h>
 #include <iostream>
-#include "user_IDs.h" 
+// #include "user_IDs.h" 
+// Self-defined messages
+#include <kinect2_tracker/user_IDs.h>
+#include <kinect2_tracker/user_points.h>
+
 #include <cv_bridge/cv_bridge.h>
 #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/highgui/highgui.hpp>
@@ -45,13 +51,13 @@ typedef std::map<std::string, nite::SkeletonJoint> JointMap;
 /**
  * Class \ref kinect2_tracker. This class can track the skeleton of people and returns joints as a TF stream,
  */
-class kinect2_tracker
+class k2_tracker
 {
 public:
   /**
    * Constructor
    */
-  kinect2_tracker() :
+  k2_tracker() :
       it_(nh_)
   {
 
@@ -99,16 +105,54 @@ public:
       return;
     }
 
-    // Initialize the users IDs publisher
-    userPub_ = nh_.advertise<skeleton_tracker::user_IDs>("/people", 1);
+    ///////////////////////////////////////////////////
+    // Create color stream
 
+    if( vsColorStream.create( devDevice_, openni::SENSOR_COLOR ) == openni::STATUS_OK )
+    {
+        // set video mode
+        openni::VideoMode mMode;
+        //mMode.setResolution( 640, 480 );
+        mMode.setResolution( 640, 480 );
+        mMode.setFps( 30 );
+        mMode.setPixelFormat( openni::PIXEL_FORMAT_RGB888 );
+
+        if( vsColorStream.setVideoMode( mMode) != openni::STATUS_OK )
+        {
+            ROS_INFO("Can't apply videomode\n");
+            //cout << "Can't apply VideoMode: " << OpenNI::getExtendedError() << endl;
+        }
+
+        // image registration
+        // if( devDevice_.isImageRegistrationModeSupported( openni::IMAGE_REGISTRATION_DEPTH_TO_COLOR ) )
+        // {
+        //     devDevice_.setImageRegistrationMode( openni::IMAGE_REGISTRATION_DEPTH_TO_COLOR );
+        // }
+        vsColorStream.setMirroringEnabled(false);
+    }
+    else
+    {
+        ROS_ERROR("Can't create color stream on device: ");// << OpenNI::getExtendedError() << endl;
+        //cerr <<  "Can't create color stream on device: " << OpenNI::getExtendedError() << endl;
+        return;
+    }
+    vsColorStream.start();
+    /////////////////////////////////////////////////////////
+
+    // Initialize the users IDs publisher
+    userPub_ = nh_.advertise<kinect2_tracker::user_IDs>("/people_skeleton", 1);
+    pointPub_ = nh_.advertise<kinect2_tracker::user_points>("/people_points", 1);
+    pointVizPub_ = nh_.advertise<geometry_msgs::PointStamped>("/people_points_viz", 1);
+    imagePub_ = it_.advertise("/kinect_rgb", 1);
+
+    // userPub_ = nh_.advertise<user_IDs>("/people", 1);
     rate_ = new ros::Rate(100);
 
   }
   /**
    * Destructor
    */
-  ~kinect2_tracker()
+  ~k2_tracker()
   {
     nite::NiTE::shutdown();
   }
@@ -120,6 +164,7 @@ public:
   {
     // Broadcast the joint frames (if they exist)
     this->getSkeleton();
+    this->getRGB();
     rate_->sleep();
   }
 
@@ -215,22 +260,22 @@ public:
   }
 
   //Publish the calibration tf_frame as the cross product of the shoulder vectors
- -// This function publishes the calibration_space opposite the shoulders of the user
- -  void publishCalibrationOriginTF(nite::SkeletonJoint skelTorso, nite::SkeletonJoint skelRshoulder, nite::SkeletonJoint skelLshoulder, int uid) 
- -  {
- -    if (skelTorso.getPositionConfidence() > 0.0)
- -    {
- -      tf::Transform calibrationOriginTransform;
- -      tf::Transform torsoTransform;
- -
- -            tf::Vector3 torsoVec3 = tf::Vector3(skelTorso.getPosition().x / 1000.0, skelTorso.getPosition().y / 1000.0, skelTorso.getPosition().z / 1000.0);
- -            torsoTransform.setOrigin(torsoVec3);
- -            torsoTransform.setRotation(tf::Quaternion(0,0,0,1));
- -
- -            tf::Vector3 RshoulderVec3 = tf::Vector3(skelRshoulder.getPosition().x / 1000.0, skelRshoulder.getPosition().y / 1000.0, skelRshoulder.getPosition().z / 1000.0);                 //create a vector for the right shoulder
- -            RshoulderVec3 = (RshoulderVec3 - torsoVec3); //vector is the difference of the two
- -
- -            tf::Vector3 LshoulderVec3 = tf::Vector3(skelLshoulder.getPosition().x / 1000.0, skelLshoulder.getPosition().y / 1000.0, skelLshoulder.getPosition().z / 1000.0);                 //create a vector for the left shoulder
+ // This function publishes the calibration_space opposite the shoulders of the user
+   void publishCalibrationOriginTF(nite::SkeletonJoint skelTorso, nite::SkeletonJoint skelRshoulder, nite::SkeletonJoint skelLshoulder, int uid) 
+   {
+     if (skelTorso.getPositionConfidence() > 0.0)
+     {
+       tf::Transform calibrationOriginTransform;
+       tf::Transform torsoTransform;
+ 
+             tf::Vector3 torsoVec3 = tf::Vector3(skelTorso.getPosition().x / 1000.0, skelTorso.getPosition().y / 1000.0, skelTorso.getPosition().z / 1000.0);
+             torsoTransform.setOrigin(torsoVec3);
+             torsoTransform.setRotation(tf::Quaternion(0,0,0,1));
+ 
+             tf::Vector3 RshoulderVec3 = tf::Vector3(skelRshoulder.getPosition().x / 1000.0, skelRshoulder.getPosition().y / 1000.0, skelRshoulder.getPosition().z / 1000.0);                 //create a vector for the right shoulder
+             RshoulderVec3 = (RshoulderVec3 - torsoVec3); //vector is the difference of the two
+ 
+             tf::Vector3 LshoulderVec3 = tf::Vector3(skelLshoulder.getPosition().x / 1000.0, skelLshoulder.getPosition().y / 1000.0, skelLshoulder.getPosition().z / 1000.0);                 //create a vector for the left shoulder
             LshoulderVec3 = (LshoulderVec3 - torsoVec3);
             tf::Vector3 calibrationOriginVec3 = RshoulderVec3.cross(LshoulderVec3);
 
@@ -265,11 +310,34 @@ public:
   }
 
   /**
+    * Get the RGB feed and publish it to ROS
+  */
+  void getRGB()
+  {
+    openni::VideoFrameRef vfColorFrame;
+    cv::Mat mImageBGR;
+    if( vsColorStream.readFrame( &vfColorFrame ) == openni::STATUS_OK )
+    {
+        // convert data to OpenCV format
+        const cv::Mat mImageRGB( vfColorFrame.getHeight(), vfColorFrame.getWidth(), CV_8UC3, const_cast<void*>( vfColorFrame.getData() ) );
+        // convert form RGB to BGR
+        cv::cvtColor( mImageRGB, mImageBGR, CV_RGB2BGR );
+        vfColorFrame.release();
+        
+        sensor_msgs::ImagePtr msg = cv_bridge::CvImage(std_msgs::Header(), "bgr8", mImageBGR).toImageMsg();
+        imagePub_.publish(msg);
+    }
+
+  }
+  /**
    * Get the skeleton's joints and the users IDs and make them all relative to the Torso joint
   */
   void getSkeleton()
   {
-    skeleton_tracker::user_IDs ids;
+    // skeleton_tracker::user_IDs ids;
+    kinect2_tracker::user_IDs ids;
+    kinect2_tracker::user_points points;
+
     niteRc_ = userTracker_.readFrame(&userTrackerFrame_);
     if (niteRc_ != nite::STATUS_OK)
     {
@@ -331,9 +399,29 @@ public:
         // Add the user's ID
         ids.users.push_back(int(user.getId()));
       }
+      if(user.isVisible()){
+        // Adding center of mass of users
+        points.users.push_back(int(user.getId()));
+        nite::Point3f user_point = user.getCenterOfMass();
+        geometry_msgs::PointStamped p;
+        geometry_msgs::PointStamped p_user1;
+        p.header.stamp = ros::Time::now();
+        p.header.frame_id = "/global_space";
+        p.point.x = user_point.x / 1000;
+        p.point.y = user_point.y / 1000;
+        p.point.z = user_point.z / 1000;
+        points.people_points.push_back(p);
+        if(user.getId() == 1){
+          p_user1 = p;
+          pointVizPub_.publish(p_user1);
+        }
+
+      }
     }
     // Publish the users' IDs
     userPub_.publish(ids);
+    pointPub_.publish(points);
+    
   }
 
   /// ROS NodeHandle
@@ -351,7 +439,8 @@ public:
 
   /// The openni device
   openni::Device devDevice_;
-
+  openni::VideoStream vsColorStream;
+  
   /// Some NITE stuff
   nite::UserTracker userTracker_;
   nite::Status niteRc_;
@@ -359,6 +448,13 @@ public:
 
   /// Users IDs publisher
   ros::Publisher userPub_;
+  ros::Publisher pointPub_;
+  ros::Publisher pointVizPub_;
+
+  //Image publisher
+  // image_transport::ImageTransport it_;
+  image_transport::Publisher imagePub_;
+
   /// Image message
   sensor_msgs::ImagePtr msg_;
 

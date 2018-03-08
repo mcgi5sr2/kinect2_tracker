@@ -40,8 +40,11 @@ include_directories(
 )
 
 add_message_files(
-   FILES
-   user_IDs.msg
+  DIRECTORY
+  msg
+  FILES
+  user_IDs.msg
+  user_points.msg
 )
 
 generate_messages(
@@ -68,17 +71,17 @@ include_directories(
 )
 
 ## Declare a C++ library
-# add_library(kinect2_tracker
-#   src/${PROJECT_NAME}/kinect2_tracker.cpp
-# )
+add_library(kinect2_tracker
+   src/kinect2_tracker_node.cpp
+)
 
 ## Add cmake target dependencies of the library
 ## as an example, code may need to be generated before libraries
 ## either from message generation or dynamic reconfigure
 # add_dependencies(kinect2_tracker ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
-set(NITE2_DIR ~/NiTE-Linux-x64-2.2/)
-set(NITE2_LIB ~//NiTE-Linux-x64-2.2/Redist/libNiTE2.so)
+set(NITE2_DIR ~/package_ws/NiTE-Linux-x64-2.2/)
+set(NITE2_LIB ~/package_ws/NiTE-Linux-x64-2.2/Redist/libNiTE2.so)
 include_directories(./include/Openni2/)
 include_directories(${NITE2_DIR}/Include)
 include_directories(./include)
