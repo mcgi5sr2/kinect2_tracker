@@ -27,6 +27,7 @@ find_package(catkin REQUIRED COMPONENTS
   tf
   tf_conversions
   std_msgs
+  message_generation
 )
 
 find_package(Eigen REQUIRED)
@@ -54,7 +55,7 @@ generate_messages(
 catkin_package(
   INCLUDE_DIRS include
   LIBRARIES kinect2_tracker
-  CATKIN_DEPENDS cv_bridge geometry_msgs image_transport kdl_conversions roscpp roslib tf tf_conversions
+  CATKIN_DEPENDS cv_bridge geometry_msgs image_transport kdl_conversions roscpp roslib tf tf_conversions message_runtime
   DEPENDS Eigen
 )
 

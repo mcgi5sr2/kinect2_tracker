@@ -1,12 +1,8 @@
 ### kinect2_tracker
 A working ROS wrapper for the KinectOne (v2) using libfreenect2
 
-#install 
-first install libfreenect2 from https://github.com/OpenKinect/libfreenect2/
-
-this repository needs to be cloned into your /catkin_ws/src/ dir
-
-git clone http://amrcgithub/mep12sr/kinect2_tracker
+# install 
+first [install libfreenect2](https://github.com/OpenKinect/libfreenect2/)
 
 then simply catkin_make 
 
@@ -17,8 +13,10 @@ The libOpenni2.so library needs to be copied to your /usr/lib dir
 
 To run the program the launch file needs to be used
 
+```bash
 roslaunch kinect2_tracker tracker.launch
+```
 
-##To Do
+## To Do
 1. Set up quarternions to give rotation for each joint
-2. Clean up cmakelists and packages.xml
+2. Clean up CMakeLists and packages.xml
