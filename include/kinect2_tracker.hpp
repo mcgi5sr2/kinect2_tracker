@@ -406,7 +406,7 @@ public:
         geometry_msgs::PointStamped p;
         geometry_msgs::PointStamped p_user1;
         p.header.stamp = ros::Time::now();
-        p.header.frame_id = "/global_space";
+        p.header.frame_id = relative_frame_;
         p.point.x = user_point.x / 1000;
         p.point.y = user_point.y / 1000;
         p.point.z = user_point.z / 1000;
