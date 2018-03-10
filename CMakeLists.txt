@@ -38,6 +38,8 @@ link_directories(
 )
 
 include_directories(
+        include
+        ${catkin_INCLUDE_DIRS}
 )
 
 add_message_files(
@@ -88,5 +90,5 @@ include_directories(${NITE2_DIR}/Include)
 include_directories(./include)
 include_directories(${OpenCV_INCLUDE_DIRS}/include)
 
-add_executable(kinect2_tracker_node src/kinect2_tracker_node.cpp)
+add_executable(kinect2_tracker_node src/kinect2_tracker_node.cpp include/kinect2_tracker.hpp include/visualization.hpp)
 target_link_libraries(kinect2_tracker_node OpenNI2 ${NITE2_LIB}  ${catkin_LIBRARIES} ${Eigen_LIBRARIES})

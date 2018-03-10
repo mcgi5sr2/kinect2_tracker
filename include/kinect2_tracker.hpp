@@ -32,9 +32,11 @@
 #include <sensor_msgs/distortion_models.h>
 #include <image_transport/image_transport.h>
 #include "NiTE.h"
+#include "visualization.hpp"
 #include <sensor_msgs/image_encodings.h>
 #include <Eigen/Geometry> 
 #include <tf_conversions/tf_eigen.h>
+#include <visualization_msgs/Marker.h>
 
 #ifndef ALPHA
 #define ALPHA 1/256
@@ -142,7 +144,7 @@ public:
     // Initialize the users IDs publisher
     userPub_ = nh_.advertise<kinect2_tracker::user_IDs>("/people_skeleton", 1);
     pointPub_ = nh_.advertise<kinect2_tracker::user_points>("/people_points", 1);
-    pointVizPub_ = nh_.advertise<geometry_msgs::PointStamped>("/people_points_viz", 1);
+    pointVizPub_ = nh_.advertise<visualization_msgs::Marker>("/people_points_viz", 1);
     imagePub_ = it_.advertise("/kinect_rgb", 1);
 
     // userPub_ = nh_.advertise<user_IDs>("/people", 1);
@@ -411,17 +413,12 @@ public:
         p.point.y = user_point.y / 1000;
         p.point.z = user_point.z / 1000;
         points.people_points.push_back(p);
-        if(user.getId() == 1){
-          p_user1 = p;
-          pointVizPub_.publish(p_user1);
-        }
-
       }
     }
     // Publish the users' IDs
     userPub_.publish(ids);
     pointPub_.publish(points);
-    
+    pointVizPub_.publish(getMarkers(points.people_points, relative_frame_));
   }
 
   /// ROS NodeHandle

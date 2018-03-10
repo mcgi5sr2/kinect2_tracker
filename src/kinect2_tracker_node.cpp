@@ -5,7 +5,7 @@
 *                                                                              *
 *******************************************************************************/
 
-#include "../include/kinect2_tracker.hpp"
+#include "kinect2_tracker.hpp"
 
 int main(int argc, char** argv)
 {

@@ -4,7 +4,9 @@
 
 	<node pkg="kinect2_tracker" type="kinect2_tracker_node" name="kinect2_tracker_node2" output="screen">
 		<param name="tf_prefix" value="$(arg tracker_name)" />
-    	<param name="relative_frame" value="/$(arg tracker_name)_link" />
+    	<param name="relative_frame" value="/$(arg tracker_name)_camera_frame" />
 	</node>
+	<node pkg="tf" type="static_transform_publisher" name="kinect_to_odom" 
+    args="0 0 0 -1.5708 -1.5708 0 /kinect_link /$(arg tracker_name)_camera_frame 100"/>
 
 </launch>
