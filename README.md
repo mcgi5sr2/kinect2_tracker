@@ -22,7 +22,7 @@ roslaunch kinect2_tracker tracker.launch
 
  - `/people_skeleton` : `kinect2_tracker::user_IDs`, id array of the tracked people
  - `/people_points`: `kinect2_tracker::user_points`, center of mass for each person
- - `/people_points_viz`: `geometry_msgs::PointStamped`, one point to show in `rviz`
+ - `/people_points_viz`: `visualization_msgs::Marker`, people points to show in `rviz`
 - `tf` transforms for the human skeletons 
 
 ### Params
