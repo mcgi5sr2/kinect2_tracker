@@ -49,6 +49,7 @@ add_message_files(
   FILES
   user_IDs.msg
   user_points.msg
+  bounding_box.msg
 )
 
 generate_messages(
@@ -93,3 +94,5 @@ include_directories(${OpenCV_INCLUDE_DIRS}/include)
 
 add_executable(kinect2_tracker_node src/kinect2_tracker_node.cpp include/kinect2_tracker.hpp include/visualization.hpp)
 target_link_libraries(kinect2_tracker_node OpenNI2 ${NITE2_LIB}  ${catkin_LIBRARIES} ${Eigen_LIBRARIES})
+
+add_dependencies(kinect2_tracker_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS} ${PROJECT_NAME}_generate_messages_cpp)

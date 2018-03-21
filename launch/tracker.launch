@@ -2,7 +2,7 @@
 
 	<arg name="tracker_name" default="kinect" />
 
-	<node pkg="kinect2_tracker" type="kinect2_tracker_node" name="kinect2_tracker_node2" output="screen">
+	<node pkg="kinect2_tracker" type="kinect2_tracker_node" name="kinect2_tracker_node2">
 		<param name="tf_prefix" value="$(arg tracker_name)" />
     	<param name="relative_frame" value="/$(arg tracker_name)_camera_frame" />
 	</node>

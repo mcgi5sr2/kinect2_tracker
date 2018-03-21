@@ -23,7 +23,7 @@ visualization_msgs::Marker getMarkers(vector<geometry_msgs::PointStamped> &point
     sphere_list.scale.y = 0.1;
     sphere_list.scale.z = 0.1;
 
-    // Points are green
+    // Points are red
     sphere_list.color.r = 1.0f;
     sphere_list.color.a = 1.0;
 

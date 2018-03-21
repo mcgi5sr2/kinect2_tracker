@@ -24,6 +24,8 @@
 // Self-defined messages
 #include <kinect2_tracker/user_IDs.h>
 #include <kinect2_tracker/user_points.h>
+#include <kinect2_tracker/user_boxes.h>
+#include <kinect2_tracker/bounding_box.h>
 
 #include <cv_bridge/cv_bridge.h>
 #include <opencv2/imgproc/imgproc.hpp>
@@ -37,6 +39,7 @@
 #include <Eigen/Geometry> 
 #include <tf_conversions/tf_eigen.h>
 #include <visualization_msgs/Marker.h>
+#include <NiteCTypes.h>
 
 #ifndef ALPHA
 #define ALPHA 1/256
@@ -405,14 +408,24 @@ public:
         // Adding center of mass of users
         points.users.push_back(int(user.getId()));
         nite::Point3f user_point = user.getCenterOfMass();
+        nite::BoundingBox boundingBox = user.getBoundingBox();
         geometry_msgs::PointStamped p;
-        geometry_msgs::PointStamped p_user1;
+        kinect2_tracker::bounding_box bbox;
+        bbox.min.point.x = boundingBox.min.x / 1000;
+        bbox.min.point.y = boundingBox.min.y / 1000;
+        bbox.min.point.z = boundingBox.min.z / 1000;
+        bbox.max.point.x = boundingBox.max.x / 1000;
+        bbox.max.point.y = boundingBox.max.y / 1000;
+        bbox.max.point.z = boundingBox.max.z / 1000;
         p.header.stamp = ros::Time::now();
         p.header.frame_id = relative_frame_;
+        bbox.min.header = p.header;
+        bbox.max.header = p.header;
         p.point.x = user_point.x / 1000;
         p.point.y = user_point.y / 1000;
         p.point.z = user_point.z / 1000;
         points.people_points.push_back(p);
+        points.boxes.push_back(bbox);
       }
     }
     // Publish the users' IDs
@@ -447,6 +460,7 @@ public:
   ros::Publisher userPub_;
   ros::Publisher pointPub_;
   ros::Publisher pointVizPub_;
+  ros::Publisher boxPub_;
 
   //Image publisher
   // image_transport::ImageTransport it_;
