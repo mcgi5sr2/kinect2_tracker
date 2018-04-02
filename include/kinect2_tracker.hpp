@@ -20,11 +20,10 @@
 #include <image_transport/image_transport.h>
 #include <cv_bridge/cv_bridge.h>
 #include <iostream>
-// #include "user_IDs.h" 
+
 // Self-defined messages
 #include <kinect2_tracker/user_IDs.h>
 #include <kinect2_tracker/user_points.h>
-#include <kinect2_tracker/user_boxes.h>
 #include <kinect2_tracker/bounding_box.h>
 
 #include <cv_bridge/cv_bridge.h>

@@ -39,8 +39,8 @@ link_directories(
 )
 
 include_directories(
-        include
-        ${catkin_INCLUDE_DIRS}
+    include
+    ${catkin_INCLUDE_DIRS}
 )
 
 add_message_files(
