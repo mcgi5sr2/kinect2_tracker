@@ -1,13 +1,12 @@
 <launch>
 
-	<arg name="tracker_name" default="brix_2" />
+	<arg name="tracker_name" default="kinect" />
 
-	<node pkg="kinect2_tracker" type="kinect2_tracker_node" name="kinect2_tracker_node2" output="screen">
+	<node pkg="kinect2_tracker" type="kinect2_tracker_node" name="kinect2_tracker_node2">
 		<param name="tf_prefix" value="$(arg tracker_name)" />
     	<param name="relative_frame" value="/$(arg tracker_name)_camera_frame" />
 	</node>
-	<!-- TF Static Transforms to World -->
-    <node pkg="tf" type="static_transform_publisher" name="brix_to_global2" 
-    args="0.295729 -0.463885 -0.0325348 0 0 0 global_space /$(arg tracker_name)_camera_frame 100"/>
-    <!--tx: 0.295729 ty:  -0.463885 tz: -0.0325348 rw: 1 rx: 0 ry: 0 rz: 0-->
+	<node pkg="tf" type="static_transform_publisher" name="kinect_to_odom" 
+    args="0 0 0 1.5708 0 1.5708 /kinect_link /$(arg tracker_name)_camera_frame 50"/>
+
 </launch>

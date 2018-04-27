@@ -1,24 +1,40 @@
-### kinect2_tracker
+# kinect2_tracker
 A working ROS wrapper for the KinectOne (v2) using libfreenect2
 
-#install 
-first install libfreenect2 from https://github.com/OpenKinect/libfreenect2/
+## install 
 
-this repository needs to be cloned into your /catkin_ws/src/ dir
-
-git clone http://amrcgithub/mep12sr/kinect2_tracker
-
-then simply catkin_make 
-
-a symbolic link needs to be created between the .ros dir where the the launch file is executed from and the NiTE2 dir where the learning algorithm stores its data.
-The NiTE2.bash file has an example of how to achieve this.
-
-The libOpenni2.so library needs to be copied to your /usr/lib dir
+- [install libfreenect2](https://github.com/OpenKinect/libfreenect2/)
+  - Make sure to install all the optional stuff, including OpenCL and **OpenNI2**
+  - When you build the library, do not follow the instructions there, instead run
+  ```bash
+  mkdir build && cd build
+  cmake .. -DCMAKE_INSTALL_PREFIX=/usr/
+  make
+  sudo make install
+  ```
+- [Download NiTE2](http://openni.ru/files/nite/index.html) and put it in `~/package_ws/NiTE-Linux-x64-2.2/`
+  - Or you can put it in some other random places, but you need to modify `CMakeList.txt` and `setup_nite.bash`
+- `source setup_nite.bash`
 
 To run the program the launch file needs to be used
 
-roslaunch kinect2_tracker tracker.launch
+## Run
 
-##To Do
-1. Set up quarternions to give rotation for each joint
-2. Clean up cmakelists and packages.xml
+```bash
+roslaunch kinect2_tracker tracker.launch
+```
+
+## API
+
+### Published
+
+- `/people_skeleton` : `kinect2_tracker::user_IDs`, id array of the tracked people
+- `/people_points`: `kinect2_tracker::user_points`, center of mass for each person
+- `/people_points_viz`: `visualization_msgs::Marker`, people points to show in `rviz`
+- `tf` transforms for the human skeletons 
+- Kinect RGB, depth and infrad images
+
+### Params
+
+- `tf_prefix`: The prefirx when publishing tf
+- `relative_frame`: The base frame of the Kinect observations

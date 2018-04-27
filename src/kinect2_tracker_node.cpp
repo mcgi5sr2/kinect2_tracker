@@ -5,14 +5,14 @@
 *                                                                              *
 *******************************************************************************/
 
-#include "../include/kinect2_tracker.hpp"
+#include "kinect2_tracker.hpp"
 
 int main(int argc, char** argv)
 {
 //initiate ros skeleton_tracker
   ros::init(argc, argv, "skeleton_tracker");
 
-  kinect2_tracker* skeleton_tracker = new kinect2_tracker();
+  k2_tracker* skeleton_tracker = new k2_tracker();
 
   while (ros::ok())
   {
