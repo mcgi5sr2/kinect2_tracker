@@ -376,8 +376,6 @@ public:
     {
       // convert depth data to OpenCV format
       const cv::Mat mImageDepth( vfDepthFrame.getHeight(), vfDepthFrame.getWidth(), CV_16UC1, const_cast<void*>( vfDepthFrame.getData() ) );
-      // convert from depth to BGR
-      //cv::cvtColor( mImageDepth, mImageBGR, CV_RGB2BGR );
       vfDepthFrame.release();
 
       sensor_msgs::ImagePtr depth_msg = cv_bridge::CvImage(std_msgs::Header(), "mono16", mImageDepth).toImageMsg();
