@@ -6,7 +6,7 @@
  *  \version 1.0
  *  \bug
  *   It will be quicker to work out the vec3s before passing them to the transform publisher
- *   Solve bodgey if torso elses 
+ *   Solve bodgey if torso elses
  *  \copyright GNU Public License.
  */
 
@@ -35,7 +35,7 @@
 #include "NiTE.h"
 #include "visualization.hpp"
 #include <sensor_msgs/image_encodings.h>
-#include <Eigen/Geometry> 
+#include <Eigen/Geometry>
 #include <tf_conversions/tf_eigen.h>
 #include <visualization_msgs/Marker.h>
 #include <NiteCTypes.h>
@@ -127,11 +127,12 @@ public:
             //cout << "Can't apply VideoMode: " << OpenNI::getExtendedError() << endl;
         }
 
-        // image registration
-        // if( devDevice_.isImageRegistrationModeSupported( openni::IMAGE_REGISTRATION_DEPTH_TO_COLOR ) )
-        // {
+        // RGB image registration
+         if( devDevice_.isImageRegistrationModeSupported( openni::IMAGE_REGISTRATION_DEPTH_TO_COLOR ) )
+         {
+		cout << "Depth Frame Working";
         //     devDevice_.setImageRegistrationMode( openni::IMAGE_REGISTRATION_DEPTH_TO_COLOR );
-        // }
+         }
         vsColorStream.setMirroringEnabled(false);
     }
     else
@@ -141,6 +142,35 @@ public:
         return;
     }
     vsColorStream.start();
+
+    if( vsDepthStream.create( devDevice_, openni::SENSOR_DEPTH ) == openni::STATUS_OK )
+    {
+      // set depth video mode
+      openni::VideoMode mMode;
+      mMode.setResolution( 512, 424 );
+      mMode.setFps( 30 );
+      mMode.setPixelFormat( openni::PIXEL_FORMAT_DEPTH_1_MM );
+
+      if( vsDepthStream.setVideoMode( mMode) != openni::STATUS_OK )
+      {
+        ROS_INFO("Can't apply depth videomode\n");
+      }
+
+      // depth image registration
+      if( devDevice_.isImageRegistrationModeSupported( openni::IMAGE_REGISTRATION_DEPTH_TO_COLOR ) )
+      {
+        cout << "Depth Frame Working";
+      }
+      vsDepthStream.setMirroringEnabled(false);
+
+    }
+    else
+    {
+      ROS_ERROR("Can't create depth stream on device: ");
+
+      return;
+    }
+    vsDepthStream.start();
     /////////////////////////////////////////////////////////
 
     // Initialize the users IDs publisher
@@ -148,7 +178,7 @@ public:
     pointPub_ = nh_.advertise<kinect2_tracker::user_points>("/people_points", 1);
     pointVizPub_ = nh_.advertise<visualization_msgs::Marker>("/people_points_viz", 1);
     imagePub_ = it_.advertise("/kinect_rgb", 1);
-
+    DepthimagePub_ = it_.advertise("/kinect_depth", 3);
     // userPub_ = nh_.advertise<user_IDs>("/people", 1);
     rate_ = new ros::Rate(100);
 
@@ -169,6 +199,7 @@ public:
     // Broadcast the joint frames (if they exist)
     this->getSkeleton();
     this->getRGB();
+    this->getDepth();
     rate_->sleep();
   }
 
@@ -221,7 +252,7 @@ public:
    * @param r: relative joint (joint j connects to)
    * @param uid: user's ID
    */
-  void publishJointTF(std::string j_name, nite::SkeletonJoint j, std::string r_name, nite::SkeletonJoint r, int uid) 
+  void publishJointTF(std::string j_name, nite::SkeletonJoint j, std::string r_name, nite::SkeletonJoint r, int uid)
   {
     if (j.getPositionConfidence() > 0.0)
     {
@@ -238,7 +269,7 @@ public:
             transform.setOrigin(currentVec3);
             transform.setRotation(tf::Quaternion(0,0,0,1));
         }
-      
+
         std::stringstream j_frame_id_stream; //stringstream of frame id values
         std::string j_frame_id; // string of the stringstream
         j_frame_id_stream << "/" << tf_prefix_ << "/user_" << uid << "/" << j_name;
@@ -248,15 +279,15 @@ public:
         std::string r_frame_id; // string of the stringstream
         r_frame_id_stream << "/" << tf_prefix_ << "/user_" << uid << "/" << r_name;
         r_frame_id = r_frame_id_stream.str();
-        
+
         if (j_name == "torso")
         {
-	        
+
             tfBroadcast_.sendTransform(tf::StampedTransform(transform, ros::Time::now(), relative_frame_, j_frame_id));
         }
         else
         {
-            
+
             tfBroadcast_.sendTransform(tf::StampedTransform(transform, ros::Time::now(), r_frame_id, j_frame_id));
         }
     }
@@ -265,20 +296,20 @@ public:
 
   //Publish the calibration tf_frame as the cross product of the shoulder vectors
  // This function publishes the calibration_space opposite the shoulders of the user
-   void publishCalibrationOriginTF(nite::SkeletonJoint skelTorso, nite::SkeletonJoint skelRshoulder, nite::SkeletonJoint skelLshoulder, int uid) 
+   void publishCalibrationOriginTF(nite::SkeletonJoint skelTorso, nite::SkeletonJoint skelRshoulder, nite::SkeletonJoint skelLshoulder, int uid)
    {
      if (skelTorso.getPositionConfidence() > 0.0)
      {
        tf::Transform calibrationOriginTransform;
        tf::Transform torsoTransform;
- 
+
              tf::Vector3 torsoVec3 = tf::Vector3(skelTorso.getPosition().x / 1000.0, skelTorso.getPosition().y / 1000.0, skelTorso.getPosition().z / 1000.0);
              torsoTransform.setOrigin(torsoVec3);
              torsoTransform.setRotation(tf::Quaternion(0,0,0,1));
- 
+
              tf::Vector3 RshoulderVec3 = tf::Vector3(skelRshoulder.getPosition().x / 1000.0, skelRshoulder.getPosition().y / 1000.0, skelRshoulder.getPosition().z / 1000.0);                 //create a vector for the right shoulder
              RshoulderVec3 = (RshoulderVec3 - torsoVec3); //vector is the difference of the two
- 
+
              tf::Vector3 LshoulderVec3 = tf::Vector3(skelLshoulder.getPosition().x / 1000.0, skelLshoulder.getPosition().y / 1000.0, skelLshoulder.getPosition().z / 1000.0);                 //create a vector for the left shoulder
             LshoulderVec3 = (LshoulderVec3 - torsoVec3);
             tf::Vector3 calibrationOriginVec3 = RshoulderVec3.cross(LshoulderVec3);
@@ -296,8 +327,8 @@ public:
               tf::Quaternion tf_calibrationOriginQuaternion;
               tf::quaternionEigenToTF(eigen_calibrationOrigenQuaternion, tf_calibrationOriginQuaternion);
 
-            calibrationOriginTransform.setRotation(tf_calibrationOriginQuaternion);		
-      
+            calibrationOriginTransform.setRotation(tf_calibrationOriginQuaternion);
+
         std::stringstream calibration_frame_id_stream; //stringstream of frame id values
         std::string calibration_frame_id; // string of the stringstream
         calibration_frame_id_stream << "/" << tf_prefix_ << "/user_" << uid << "/calibrationOrigin";
@@ -307,7 +338,7 @@ public:
         std::string r_frame_id; // string of the stringstream
         r_frame_id_stream << "/" << tf_prefix_ << "/user_" << uid << "/torso";
         r_frame_id = r_frame_id_stream.str();
-            
+
         tfBroadcast_.sendTransform(tf::StampedTransform(calibrationOriginTransform, ros::Time::now(), r_frame_id, calibration_frame_id));
     }
     return;
@@ -327,11 +358,29 @@ public:
         // convert form RGB to BGR
         cv::cvtColor( mImageRGB, mImageBGR, CV_RGB2BGR );
         vfColorFrame.release();
-        
+
         sensor_msgs::ImagePtr msg = cv_bridge::CvImage(std_msgs::Header(), "bgr8", mImageBGR).toImageMsg();
         imagePub_.publish(msg);
     }
 
+  }
+
+  /**
+    * Get the Depth feed and publish it to ROS
+  */
+  void getDepth()
+  {
+    openni::VideoFrameRef vfDepthFrame;
+    cv::Mat mImageBGR;
+    if( vsDepthStream.readFrame( &vfDepthFrame ) == openni::STATUS_OK )
+    {
+      // convert depth data to OpenCV format
+      const cv::Mat mImageDepth( vfDepthFrame.getHeight(), vfDepthFrame.getWidth(), CV_16UC1, const_cast<void*>( vfDepthFrame.getData() ) );
+      vfDepthFrame.release();
+
+      sensor_msgs::ImagePtr depth_msg = cv_bridge::CvImage(std_msgs::Header(), "mono16", mImageDepth).toImageMsg();
+      DepthimagePub_.publish(depth_msg);
+    }
   }
   /**
    * Get the skeleton's joints and the users IDs and make them all relative to the Torso joint
@@ -372,7 +421,7 @@ public:
         named_joints["right_knee"] = (user.getSkeleton().getJoint(nite::JOINT_RIGHT_KNEE));
         named_joints["left_foot"] = (user.getSkeleton().getJoint(nite::JOINT_LEFT_FOOT));
         named_joints["right_foot"] = (user.getSkeleton().getJoint(nite::JOINT_RIGHT_FOOT));
-        named_joints["neck"] = (user.getSkeleton().getJoint(nite::JOINT_NECK));  
+        named_joints["neck"] = (user.getSkeleton().getJoint(nite::JOINT_NECK));
         named_joints["head"] = (user.getSkeleton().getJoint(nite::JOINT_HEAD));
         named_joints["left_shoulder"] = (user.getSkeleton().getJoint(nite::JOINT_LEFT_SHOULDER));
         named_joints["right_shoulder"] = (user.getSkeleton().getJoint(nite::JOINT_RIGHT_SHOULDER));
@@ -449,7 +498,8 @@ public:
   /// The openni device
   openni::Device devDevice_;
   openni::VideoStream vsColorStream;
-  
+  openni::VideoStream vsDepthStream;
+
   /// Some NITE stuff
   nite::UserTracker userTracker_;
   nite::Status niteRc_;
@@ -464,10 +514,10 @@ public:
   //Image publisher
   // image_transport::ImageTransport it_;
   image_transport::Publisher imagePub_;
-
+  image_transport::Publisher DepthimagePub_;
   /// Image message
   sensor_msgs::ImagePtr msg_;
-
+  sensor_msgs::ImagePtr depth_msg_;
   /// Node rate
   ros::Rate* rate_;
 
